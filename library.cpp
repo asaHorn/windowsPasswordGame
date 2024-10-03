@@ -12,7 +12,6 @@
 // aoh9470@rit.edu
 //
 
-#include <winsock2.h>
 #include <Windows.h>
 #include <SubAuth.h>
 

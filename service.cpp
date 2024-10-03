@@ -1,80 +1,14 @@
 #include <windows.h>
 #include <stdio.h>
 
-SERVICE_STATUS ServiceStatus;
-SERVICE_STATUS_HANDLE hStatus;
-
-void ServiceMain(int argc, char** argv);
-void ControlHandler(DWORD request);
-void ListenForFeedback();
-
 int main() {
-    SERVICE_TABLE_ENTRY ServiceTable[] = {
-            { "BOEINGPasswordDisplayService", (LPSERVICE_MAIN_FUNCTION)ServiceMain },
-            { NULL, NULL }
-    };
-
-    StartServiceCtrlDispatcher(ServiceTable);
-    return 0;
-}
-
-void ServiceMain(int argc, char** argv) {
-    hStatus = RegisterServiceCtrlHandler("BOEINGPasswordDisplayService", (LPHANDLER_FUNCTION)ControlHandler);
-    if (hStatus == (SERVICE_STATUS_HANDLE)0) {
-        return;
-    }
-
-    ServiceStatus.dwServiceType = SERVICE_WIN32;
-    ServiceStatus.dwCurrentState = SERVICE_START_PENDING;
-    ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
-    ServiceStatus.dwWin32ExitCode = 0;
-    ServiceStatus.dwServiceSpecificExitCode = 0;
-    ServiceStatus.dwCheckPoint = 0;
-    ServiceStatus.dwWaitHint = 0;
-
-    SetServiceStatus(hStatus, &ServiceStatus);
-
-    // Service initialization code here
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ListenForFeedback, NULL, 0, NULL);
     MessageBox(
-            NULL,                           // Handle to the owner window
-            "started",    // The message text
-            "note",          // title
-            MB_OK | MB_ICONINFORMATION      // Display options
+        NULL,                  // Handle to the owner window (NULL for no owner)
+        "This is a pop-up message.",  // The message text
+        "Message Box Title",    // The title of the message box
+        MB_OK | MB_ICONINFORMATION  // Display options (OK button, Information icon)
     );
 
-    ServiceStatus.dwCurrentState = SERVICE_RUNNING;
-    SetServiceStatus(hStatus, &ServiceStatus);
-
-    // Service running code here
-    while (ServiceStatus.dwCurrentState == SERVICE_RUNNING) {
-        Sleep(1000);
-    }
-
-    return;
-}
-
-void ControlHandler(DWORD request) {
-    switch (request) {
-        case SERVICE_CONTROL_STOP:
-            ServiceStatus.dwWin32ExitCode = 0;
-            ServiceStatus.dwCurrentState = SERVICE_STOPPED;
-            SetServiceStatus(hStatus, &ServiceStatus);
-            return;
-        case SERVICE_CONTROL_SHUTDOWN:
-            ServiceStatus.dwWin32ExitCode = 0;
-            ServiceStatus.dwCurrentState = SERVICE_STOPPED;
-            SetServiceStatus(hStatus, &ServiceStatus);
-            return;
-        default:
-            break;
-    }
-
-    SetServiceStatus(hStatus, &ServiceStatus);
-    return;
-}
-
-void ListenForFeedback() {
     HANDLE hPipe = CreateNamedPipe(
             "\\\\.\\pipe\\PasswordFilterPipe",
             PIPE_ACCESS_INBOUND,
@@ -90,16 +24,10 @@ void ListenForFeedback() {
                 "note",          // title
                 MB_OK | MB_ICONINFORMATION      // Display options
         );
-        return;
+        return -1;
     }
 
-    while (ServiceStatus.dwCurrentState == SERVICE_RUNNING) {
-        MessageBox(
-                NULL,                           // Handle to the owner window
-                "listening",    // The message text
-                "note",          // title
-                MB_OK | MB_ICONINFORMATION      // Display options
-        );
+    while (true) {
         if (ConnectNamedPipe(hPipe, NULL) != FALSE) {
             int code;
             DWORD bytesRead;
