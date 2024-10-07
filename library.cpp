@@ -17,6 +17,10 @@
 #include <string>
 //#include <iostream>
 
+//Check if two substrings equal eachother
+//in: str1 and str2 to compare
+//in: len, the number of chars to compare
+//out: TRUE if the two sequences are identical, FALSE otherwise
 bool equals(const WCHAR* str1, const WCHAR* str2, size_t len){
     for (size_t i = 0; i < len; ++i) {
         if (str1[i] != str2[i]) {
@@ -26,7 +30,12 @@ bool equals(const WCHAR* str1, const WCHAR* str2, size_t len){
     return true;
 }
 
-
+//Find a substring in a larger string
+//in:bigString, the larger string to find inside of
+//in: bigString_len, the length of bigstring
+//in: smallString, the string to find
+//in: smallString_len, the length of smallstring
+//out: index of smallString[0] if smallString appears in bigString, -1 otherwise
 size_t find(const WCHAR* bigString, size_t bigString_len, const WCHAR* smallString, size_t smallString_len) {
     if (smallString_len == 0 || bigString_len < smallString_len) {
         return -1;
@@ -40,10 +49,23 @@ size_t find(const WCHAR* bigString, size_t bigString_len, const WCHAR* smallStri
     return -1;
 }
 
+//Check if a string appears in another string.
+//in:bigString, the larger string to find inside of
+//in: bigString_len, the length of bigstring
+//in: smallString, the string to find
+//in: smallString_len, the length of smallstring
+//out: TRUE if smallString appears in bigString, FALSE otherwise
 bool contains(const WCHAR* bigString, size_t bigString_len, const WCHAR* smallString, size_t smallString_len) {
     return find(bigString, bigString_len, smallString, smallString_len) != -1;
 }
 
+//Check if a string contains any value in array
+//in:bigString, the larger string to find inside of
+//in: bigString_len, the length of bigstring
+//in: array substrings, an array of smallstrings to check for
+//in: array substrings_len[], an array containing the sizes of the above strings in the same order
+//in: substrings_count, the length of substrings
+//out: TRUE if bigString contains any value in substrings at any position, FALSE otherwise
 bool contains_any(const WCHAR* bigString, size_t bigString_len, const WCHAR* substrings[], size_t substrings_len[], size_t substrings_count) {
     for (size_t i = 0; i < substrings_count; ++i) {
         if (contains(bigString, bigString_len, substrings[i], substrings_len[i])) {
@@ -53,6 +75,11 @@ bool contains_any(const WCHAR* bigString, size_t bigString_len, const WCHAR* sub
     return false;
 }
 
+//Extract all of the digits in a string into an array of ints
+//in: str, the string to search
+//in: strLen, the length of str
+//in: a pointer to returnedDigitsLen, used to store the length of the returned array
+//out: an array of ints containing all of the digits of the string in order
 int* extractDigits(const WCHAR* str, size_t strLen, size_t& returnedDigitsLen){
     int* digits = (int*) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 15*sizeof(int)); //15 because that is the max ## of digits (16 or more would fail r0)
     for(size_t i=0; i<strLen; ++i){
@@ -64,6 +91,10 @@ int* extractDigits(const WCHAR* str, size_t strLen, size_t& returnedDigitsLen){
     return digits;
 }
 
+//Send a reponse code via a named pipe to SERVICE.exe
+//Used for creating message boxes for user feedback (LSASS making message boxes = BSOD)
+//in: int code to send
+//out: void
 void SendFeedbackToUser(int code) {
     HANDLE hPipe = CreateFile(
             "\\\\.\\pipe\\PasswordFilterPipe",
@@ -98,8 +129,9 @@ bool checkZero(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     size_t retLength=0;
     int* digits = extractDigits(password->Buffer, password->Length/2, retLength);
-    int sum=0;
 
+    //count digits returned by digit extractor
+    int sum=0;
     for(int i=0; i<retLength; ++i){
         sum += digits[i];
     }
@@ -157,6 +189,7 @@ bool checkThree(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkFour(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+    //run through the entire string and reject if any two digits are consecutive
     for(size_t i=0; i<(password->Length/2)-1; ++i){
         if(isdigit(password->Buffer[i]) && isdigit(password->Buffer[i+1])){
             return true;
@@ -170,12 +203,14 @@ bool checkFour(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkFive(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+    //count number of uppercase chars
     int numUpper = 0;
     for(size_t i = 0; i<password->Length/2; ++i){
         if(IsCharUpperW(password->Buffer[i])){
             numUpper++;
         }
     }
+
     return numUpper != 4;
 }
 
@@ -222,6 +257,7 @@ bool checkEight(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     size_t capIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"kinshasa"), 8);
     //if the all lower case string matches the unaltered case then the password has the proper noun un-capitalized
     if(capIndex != -1){if(password->Buffer[capIndex] == lPassword->Buffer[capIndex]){return true;}}
+
     //do the same check for the names, all names which contain an e or are too long can be skipped because of earlier rules
     size_t asaIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"asa"), 3);
     if(asaIndex != -1){if(password->Buffer[asaIndex] == lPassword->Buffer[asaIndex]){return true;}}
@@ -243,13 +279,14 @@ bool checkNine(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     size_t retLength=0;
     int* digits = extractDigits(password->Buffer, password->Length/2, retLength);
 
+    //This should be impossible because of earlier rules, but unhandled memory exceptions in LSASS = bad
+    //We return true because any single digit must be in order
     if(retLength < 2){
-        //can't have a product of < two numbers
         HeapFree(GetProcessHeap(), 0, digits);
-        return false;
+        return true;
     }
 
-    //do the check
+    //Check the digits returned by digit extractor for out of order digits
     for(size_t i=0; i<retLength-1; ++i){
         if(digits[i] > digits[i+1]){
             HeapFree(GetProcessHeap(), 0, digits);
