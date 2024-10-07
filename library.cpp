@@ -140,7 +140,7 @@ bool checkTwo(PUNICODE_STRING password, PUNICODE_STRING lPassword){
             4
     };
 
-    return !contains_any(lPassword->Buffer, lPassword->Length/2, teamNames, substrings_len, 9);;
+    return !contains_any(lPassword->Buffer, lPassword->Length/2, teamNames, substrings_len, 10);;
 }
 
 //RULE -- 3
@@ -216,6 +216,8 @@ bool checkSeven(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkEight(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+    //Known issue: Second+ occurrences of a name are not checked. TBH I don't care tho
+
     //find the required proper noun's index
     size_t capIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"kinshasa"), 8);
     //if the all lower case string matches the unaltered case then the password has the proper noun un-capitalized
@@ -248,9 +250,8 @@ bool checkNine(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     }
 
     //do the check
-    int lastDigit = digits[0];
-    for(size_t i=1; i<retLength-1; ++i){
-        if(lastDigit > digits[i]){
+    for(size_t i=0; i<retLength-1; ++i){
+        if(digits[i] > digits[i+1]){
             HeapFree(GetProcessHeap(), 0, digits);
             return true;
         }
@@ -306,19 +307,19 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
 
     //configure lPassword (password lowercase, for case-insensitive checks)
     PUNICODE_STRING lPassword = (PUNICODE_STRING) HeapAlloc(hHeap, HEAP_ZERO_MEMORY, sizeof(PUNICODE_STRING));
-    lPassword->Buffer = (wchar_t*) HeapAlloc(hHeap, HEAP_ZERO_MEMORY, sizeof(wchar_t)*password->Length/2);
-    CopyMemory(lPassword->Buffer, password->Buffer, password->Length/2);
+    lPassword->Buffer = (wchar_t*) HeapAlloc(hHeap, HEAP_ZERO_MEMORY, sizeof(wchar_t)*password->Length);
+    CopyMemory(lPassword->Buffer, password->Buffer, password->Length);
     lPassword->Length = password->Length;
     lPassword->MaximumLength = password->MaximumLength;
-    CharLowerBuffW(lPassword->Buffer, lPassword->Length/2);
+    CharLowerBuffW(lPassword->Buffer, lPassword->Length);
 
     //RULE -- 0
     if(checkZero(password, lPassword)){
         SendFeedbackToUser(0);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r0: len";
-        //std::cerr << password->Length/2;
+//        std::cout << "r0: len";
+//        std::cerr << password->Length/2;
         return FALSE;
     }
 
@@ -327,7 +328,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(1);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r1: 6 sum";
+//        std::cout << "r1: 6 sum";
         return FALSE;
     }
 
@@ -336,7 +337,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(2);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r2: name";
+//        std::cout << "r2: name";
         return FALSE;
     }
 
@@ -345,7 +346,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(3);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r3: e";
+//        std::cout << "r3: e";
         return FALSE;
     }
 
@@ -354,7 +355,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(4);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r4: consec digits I";
+//        std::cout << "r4: consec digits I";
         return FALSE;
     }
 
@@ -363,7 +364,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(5);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r5: uppercase";
+//        std::cout << "r5: uppercase";
         return FALSE;
     }
 
@@ -372,7 +373,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(6);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r6: DRoC";
+//        std::cout << "r6: DRoC";
         return FALSE;
     }
 
@@ -381,7 +382,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(7);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r7: 6 mult";
+//        std::cout << "r7: 6 mult";
         return FALSE;
     }
 
@@ -390,7 +391,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(8);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r8: proper caps";
+//        std::cout << "r8: proper caps";
         return FALSE;
     }
 
@@ -399,7 +400,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(9);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r9: ascend";
+//        std::cout << "r9: ascend";
         return FALSE;
     }
 
@@ -408,7 +409,7 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         SendFeedbackToUser(10);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
-        //std::cout << "r10: passwd";
+//        std::cout << "r10: passwd";
         return FALSE;
     }
 
