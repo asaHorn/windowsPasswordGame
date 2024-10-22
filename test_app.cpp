@@ -22,7 +22,7 @@ int main() {
     // Prepare test data
     UNICODE_STRING username, password;
     InitUnicodeString(&username, L"testuser");
-    InitUnicodeString(&password, L"1ASA3s2Kinshasa");
+    InitUnicodeString(&password, L"Pas-123bob");
     ULONG relativeId = 12345;
 
     // call my function (he gets lonely)

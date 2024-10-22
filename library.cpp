@@ -115,15 +115,15 @@ void SendFeedbackToUser(int code) {
 
 
 //RULE -- 0
-//reject pass >= 16 chars
+//reject pass >= 18 chars
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkZero(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return password->Length/2 >= 16;
+    return password->Length/2 >= 18;
 }
 
 //RULE -- 1
-//reject pass where sum of digits != 6
+//reject pass where sum of digits != 7
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
@@ -138,7 +138,7 @@ bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 
     HeapFree(GetProcessHeap(), 0, digits);
     //if(sum!=6){std::cerr << sum;}//debug
-    return sum != 6;
+    return sum != 7;
 }
 
 //RULE -- 2
@@ -147,32 +147,22 @@ bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //out: true to reject the password, false to accept it
 bool checkTwo(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     const WCHAR* teamNames[] = {
-            L"aiden",
-            L"andrew",
-            L"asa",
-            L"craig",
-            L"ethan",
-            L"garret",
-            L"jenna",
-            L"nick",
-            L"nicholas",
-            L"noah"
+            L"bob",
+            L"dylan",
+            L"alice",
+            L"ashley",
+            L"mark"
     };
 
     size_t substrings_len[] = {
-            5,
-            6,
             3,
             5,
             5,
             6,
-            5,
             4,
-            8,
-            4
     };
 
-    return !contains_any(lPassword->Buffer, lPassword->Length/2, teamNames, substrings_len, 10);;
+    return !contains_any(lPassword->Buffer, lPassword->Length/2, teamNames, substrings_len, 5);;
 }
 
 //RULE -- 3
@@ -223,27 +213,11 @@ bool checkSix(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 }
 
 //RULE -- 7
-//reject pass where prod of digits != 6
+//reject pass where number 3 is not present
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkSeven(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    size_t retLength=0;
-    int* digits = extractDigits(password->Buffer, password->Length/2, retLength);
-
-    if(retLength < 2){
-        //can't have a product of < two numbers
-        HeapFree(GetProcessHeap(), 0, digits);
-        return false;
-    }
-
-    //do the multiplication
-    int prod=digits[0]*digits[1];
-    for(size_t i=2; i<retLength; ++i){
-        prod *= digits[i];
-    }
-
-    HeapFree(GetProcessHeap(), 0, digits);
-    return prod != 6;
+    return !contains(password->Buffer, password->Length/2, reinterpret_cast<const WCHAR *>(L"3"), 1);
 }
 
 //RULE -- 8
@@ -259,13 +233,15 @@ bool checkEight(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     if(capIndex != -1){if(password->Buffer[capIndex] == lPassword->Buffer[capIndex]){return true;}}
 
     //do the same check for the names, all names which contain an e or are too long can be skipped because of earlier rules
-    size_t asaIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"asa"), 3);
+    size_t asaIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"bob"), 3);
     if(asaIndex != -1){if(password->Buffer[asaIndex] == lPassword->Buffer[asaIndex]){return true;}}
-    size_t nickIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"nick"), 4);
+    size_t nickIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"dylan"), 4);
     if(nickIndex != -1){if(password->Buffer[nickIndex] == lPassword->Buffer[nickIndex]){return true;}}
-    size_t craigIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"craig"), 5);
+    size_t craigIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"ashley"), 5);
     if(craigIndex != -1){if(password->Buffer[craigIndex] == lPassword->Buffer[craigIndex]){return true;}}
-    size_t noahIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"noah"), 4);
+    size_t aliceIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"alice"), 5);
+    if(aliceIndex != -1){if(password->Buffer[craigIndex] == lPassword->Buffer[craigIndex]){return true;}}
+    size_t noahIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"mark"), 4);
     if(noahIndex != -1){if(password->Buffer[noahIndex] == lPassword->Buffer[noahIndex]){return true;}}
 
     return false;
@@ -303,7 +279,10 @@ bool checkNine(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkTen(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return !contains(password->Buffer, password->Length/2, reinterpret_cast<const WCHAR *>(L"Th3iR"), 5);
+    return !(
+        contains(password->Buffer, password->Length/2, reinterpret_cast<const WCHAR *>(L"Th3iR"), 5) or
+        contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"bobc4t"), 5)
+    );
 }
 
 

