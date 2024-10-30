@@ -115,18 +115,18 @@ void SendFeedbackToUser(int code) {
 
 
 //RULE -- 0
-//reject pass >= 18 chars
-//in: password, the password & lPassword, the password all lowercase
-//out: true to reject the password, false to accept it
-bool checkZero(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return password->Length/2 >= 18;
-}
-
-//RULE -- 1
-//reject pass where sum of digits != 7
+//reject pass >= 26 chars
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+    return password->Length/2 >= 26;
+}
+
+//RULE -- 1
+//reject pass where sum of digits != 18
+//in: password, the password & lPassword, the password all lowercase
+//out: true to reject the password, false to accept it
+bool checkTwo(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     size_t retLength=0;
     int* digits = extractDigits(password->Buffer, password->Length/2, retLength);
 
@@ -138,28 +138,37 @@ bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 
     HeapFree(GetProcessHeap(), 0, digits);
     //if(sum!=6){std::cerr << sum;}//debug
-    return sum != 7;
+    return sum != 18;
 }
 
 //RULE -- 2
 //reject pass without redteam name
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
-bool checkTwo(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+bool checkThree(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     const WCHAR* teamNames[] = {
-            L"bob",
-            L"dylan",
-            L"alice",
-            L"ashley",
-            L"mark"
+            L"truman",
+            L"eisenhower",
+            L"kennedy",
+            L"johnson",
+            L"nixon",
+            L"ford",
+            L"carter",
+            L"reagan",
+            L"bush"
+
     };
 
     size_t substrings_len[] = {
-            3,
-            5,
-            5,
             6,
+            10,
+            7,
+            7,
+            5,
             4,
+            6,
+            6,
+            4
     };
 
     return !contains_any(lPassword->Buffer, lPassword->Length/2, teamNames, substrings_len, 5);;
@@ -169,54 +178,24 @@ bool checkTwo(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //reject pass contain('e')
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
-bool checkThree(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+bool checkFour(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     const WCHAR* e = L"e";
     return contains(lPassword->Buffer, lPassword->Length/2, e, 1);
 }
 
-//RULE -- 4
-//reject pass w/ consecutive digits
-//in: password, the password & lPassword, the password all lowercase
-//out: true to reject the password, false to accept it
-bool checkFour(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    //run through the entire string and reject if any two digits are consecutive
-    for(size_t i=0; i<(password->Length/2)-1; ++i){
-        if(isdigit(password->Buffer[i]) && isdigit(password->Buffer[i+1])){
-            return true;
-        }
-    }
-    return false;
-}
-
 //RULE -- 5
-//reject pass != 4 caps
+//reject pass wo/ "manama"
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkFive(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    //count number of uppercase chars
-    int numUpper = 0;
-    for(size_t i = 0; i<password->Length/2; ++i){
-        if(IsCharUpperW(password->Buffer[i])){
-            numUpper++;
-        }
-    }
-
-    return numUpper != 4;
+    return !contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"manama"), 8);
 }
 
 //RULE -- 6
-//reject pass wo/ "kinshasa"
-//in: password, the password & lPassword, the password all lowercase
-//out: true to reject the password, false to accept it
-bool checkSix(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return !contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"kinshasa"), 8);
-}
-
-//RULE -- 7
 //reject pass where number 3 is not present
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
-bool checkSeven(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+bool checkSix(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     return !contains(password->Buffer, password->Length/2, reinterpret_cast<const WCHAR *>(L"3"), 1);
 }
 
@@ -224,65 +203,27 @@ bool checkSeven(PUNICODE_STRING password, PUNICODE_STRING lPassword){
 //reject pass without proper noun caps
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
-bool checkEight(PUNICODE_STRING password, PUNICODE_STRING lPassword){
+bool checkSeven(PUNICODE_STRING password, PUNICODE_STRING lPassword){
     //Known issue: Second+ occurrences of a name are not checked. TBH I don't care tho
 
     //find the required proper noun's index
-    size_t capIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"kinshasa"), 8);
+    size_t capIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"manama"), 8);
     //if the all lower case string matches the unaltered case then the password has the proper noun un-capitalized
     if(capIndex != -1){if(password->Buffer[capIndex] == lPassword->Buffer[capIndex]){return true;}}
 
     //do the same check for the names, all names which contain an e or are too long can be skipped because of earlier rules
-    size_t asaIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"bob"), 3);
+    size_t asaIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"truman"), 3);
     if(asaIndex != -1){if(password->Buffer[asaIndex] == lPassword->Buffer[asaIndex]){return true;}}
-    size_t nickIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"dylan"), 4);
+    size_t nickIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"johnson"), 4);
     if(nickIndex != -1){if(password->Buffer[nickIndex] == lPassword->Buffer[nickIndex]){return true;}}
-    size_t craigIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"ashley"), 5);
+    size_t craigIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"nixon"), 5);
     if(craigIndex != -1){if(password->Buffer[craigIndex] == lPassword->Buffer[craigIndex]){return true;}}
-    size_t aliceIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"alice"), 5);
+    size_t aliceIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"ford"), 5);
     if(aliceIndex != -1){if(password->Buffer[craigIndex] == lPassword->Buffer[craigIndex]){return true;}}
-    size_t noahIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"mark"), 4);
+    size_t noahIndex = find(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"bush"), 4);
     if(noahIndex != -1){if(password->Buffer[noahIndex] == lPassword->Buffer[noahIndex]){return true;}}
 
     return false;
-}
-
-//RULE -- 9
-//reject pass w/ out of order digits
-//in: password, the password & lPassword, the password all lowercase
-//out: true to reject the password, false to accept it
-bool checkNine(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    size_t retLength=0;
-    int* digits = extractDigits(password->Buffer, password->Length/2, retLength);
-
-    //This should be impossible because of earlier rules, but unhandled memory exceptions in LSASS = bad
-    //We return true because any single digit must be in order
-    if(retLength < 2){
-        HeapFree(GetProcessHeap(), 0, digits);
-        return true;
-    }
-
-    //Check the digits returned by digit extractor for out of order digits
-    for(size_t i=0; i<retLength-1; ++i){
-        if(digits[i] > digits[i+1]){
-            HeapFree(GetProcessHeap(), 0, digits);
-            return true;
-        }
-    }
-
-    HeapFree(GetProcessHeap(), 0, digits);
-    return false;
-}
-
-//RULE -- 10
-//reject pass wo/ secret
-//in: password, the password & lPassword, the password all lowercase
-//out: true to reject the password, false to accept it
-bool checkTen(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return !(
-        contains(password->Buffer, password->Length/2, reinterpret_cast<const WCHAR *>(L"Th3iR"), 5) or
-        contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"bobc4t"), 5)
-    );
 }
 
 
@@ -329,8 +270,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
     lPassword->MaximumLength = password->MaximumLength;
     CharLowerBuffW(lPassword->Buffer, lPassword->Length);
 
-    //RULE -- 0
-    if(checkZero(password, lPassword)){
+    //RULE -- 1
+    if(checkOne(password, lPassword)){
         SendFeedbackToUser(0);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -339,8 +280,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 1
-    else if(checkOne(password, lPassword)){
+    //RULE -- 2
+    else if(checkTwo(password, lPassword)){
         SendFeedbackToUser(1);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -348,8 +289,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 2
-    else if(checkTwo(password, lPassword)){
+    //RULE -- 3
+    else if(checkThree(password, lPassword)){
         SendFeedbackToUser(2);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -357,8 +298,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 3
-    else if(checkThree(password, lPassword)){
+    //RULE -- 4
+    else if(checkFour(password, lPassword)){
         SendFeedbackToUser(3);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -366,8 +307,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 4
-    else if(checkFour(password, lPassword)){
+    //RULE -- 5
+    else if(checkFive(password, lPassword)){
         SendFeedbackToUser(4);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -375,8 +316,8 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 5
-    else if(checkFive(password, lPassword)){
+    //RULE -- 6
+    else if(checkSix(password, lPassword)){
         SendFeedbackToUser(5);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
@@ -384,48 +325,12 @@ extern "C" __declspec(dllexport) BOOLEAN __stdcall PasswordFilter(PUNICODE_STRIN
         return FALSE;
     }
 
-    //RULE -- 6
-    else if(checkSix(password, lPassword)){
+    //RULE -- 7
+    else if(checkSeven(password, lPassword)){
         SendFeedbackToUser(6);
         HeapFree(hHeap, 0, lPassword->Buffer);
         HeapFree(hHeap, 0, lPassword);
 //        std::cout << "r6: DRoC";
-        return FALSE;
-    }
-
-    //RULE -- 7
-    else if(checkSeven(password, lPassword)){
-        SendFeedbackToUser(7);
-        HeapFree(hHeap, 0, lPassword->Buffer);
-        HeapFree(hHeap, 0, lPassword);
-//        std::cout << "r7: 6 mult";
-        return FALSE;
-    }
-
-    //RULE -- 8
-    else if(checkEight(password, lPassword)){
-        SendFeedbackToUser(8);
-        HeapFree(hHeap, 0, lPassword->Buffer);
-        HeapFree(hHeap, 0, lPassword);
-//        std::cout << "r8: proper caps";
-        return FALSE;
-    }
-
-    //RULE -- 9
-    else if(checkNine(password, lPassword)){
-        SendFeedbackToUser(9);
-        HeapFree(hHeap, 0, lPassword->Buffer);
-        HeapFree(hHeap, 0, lPassword);
-//        std::cout << "r9: ascend";
-        return FALSE;
-    }
-
-    //RULE -- 10
-    else if(checkTen(password, lPassword)){
-        SendFeedbackToUser(10);
-        HeapFree(hHeap, 0, lPassword->Buffer);
-        HeapFree(hHeap, 0, lPassword);
-//        std::cout << "r10: passwd";
         return FALSE;
     }
 
