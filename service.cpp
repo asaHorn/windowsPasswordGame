@@ -43,7 +43,7 @@ int main() {
                 }else if(code==3) {
                     MessageBox(
                             NULL,
-                            "Your password change request has been DENIED.\n\rRULE 3/10 | HISTORY LESSON:\n\r\n\rWorld leaders should know their history. Your password must include the name of your favorite cold war president (of the US)",
+                            "Your password change request has been DENIED.\n\rRULE 3/10 | HISTORY LESSON:\n\r\n\rWorld leaders should know their history. Your password must include the name of the 36th president of the United States",
                             "Message From the red on your street",          // The title of the message box
                             MB_HELP | MB_ICONHAND    // Display options (OK button, Information icon)
                     );
