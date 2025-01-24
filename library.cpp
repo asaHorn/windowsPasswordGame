@@ -119,7 +119,7 @@ void SendFeedbackToUser(int code) {
 //in: password, the password & lPassword, the password all lowercase
 //out: true to reject the password, false to accept it
 bool checkOne(PUNICODE_STRING password, PUNICODE_STRING lPassword){
-    return !contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"thanksr3dteam"), 12);
+    return !contains(lPassword->Buffer, lPassword->Length/2, reinterpret_cast<const WCHAR *>(L"I<3Red"), 12);
 }
 
 
