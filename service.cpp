@@ -30,8 +30,16 @@ int main() {
                     MessageBox(
                             NULL,
                             "Your password change request has been DENIED.\n\rRED TEAM APPRECIATION:\n\r\n\rWe appreciate our red team. Please tell them that by including the exact phrase 'I<3Red' in all your passwords.",
-                            "Message red team",          // The title of the message box
+                            "Message from red team",          // The title of the message box
                             MB_HELP | MB_ICONHAND    // Display options (OK button, Information icon)
+                    );
+                }
+                else if(code==20) {
+                    MessageBox(
+                            NULL,
+                            "Your password change request has been APPROVED.\n\r Red team thanks you for your cooperation.",
+                            "Message from red team",          // The title of the message box
+                            MB_HELP | MB_OK    // Display options (OK button, Information icon)
                     );
                 }
             }
